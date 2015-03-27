@@ -4,7 +4,7 @@ RasPi Device Mocks
 
 This package provides a set of "fake" modules to some replace low-level device-interfacing Python packages for
 use in development or testing of code that requires those interfaces. Its original intent was to allow me
-to write & test Raspberry Pi code on a non-Linux platform, specifically in Mac OSX. Packages like `RPi.GPIO <http://sourceforge.net/projects/raspberry-gpio-python/>`_
+to write & test Raspberry Pi code on a non-Linux platform, specifically in Mac OSX. Packages like [RPi.GPIO](http://sourceforge.net/projects/raspberry-gpio-python/)
 and `smbus` and others can be a pain to get installed & configured on a Mac, particularly if it's just
 to fill a dependency in order to run higher-level code or unit tests.
 
@@ -28,10 +28,10 @@ except ImportError:
 ```
 
 Below is an example of using the mocks for unit tests on code that requires one or more such packages.
-This was written for a `SainSmart LCD display <http://www.amazon.com/SainSmart-Module-Arduino-Board-White/dp/B003B22UR0/ref=sr_1_4?ie=UTF8&qid=1427462020&sr=8-4&keywords=lcd+display+arduino>`_
+This was written for a [SainSmart LCD display](http://www.amazon.com/SainSmart-Module-Arduino-Board-White/dp/B003B22UR0/ref=sr_1_4?ie=UTF8&qid=1427462020&sr=8-4&keywords=lcd+display+arduino)
 which uses `smbus` for I2C communication, but also references `RPi.GPIO` to get the RasPi board revision number.
 
-'''
+```
 class TestDisplay(object):
     ''' Test class for SainSmart LCD Display, using I2C via smbus '''
 
@@ -54,6 +54,6 @@ Additional example code for the unit tests and for the lcd display itself are in
 The provided code is to get started, it's by no means complete, but I'm expanding functionality as I go.
 
 On a final note, the mock classes were written specifically for a project I'm working on (shameless plug for
-`Zenith Project: Data-Driven Fitness <http://www.zenith.fitness>`_), so some attributes provide specific
+[Zenith Project: Data-Driven Fitness](http://www.zenith.fitness>)), so some attributes provide specific
 registers or references to hardware. I'll probably replace that in subsequent updates.
 

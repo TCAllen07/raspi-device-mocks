@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 # mocks.py: Mock objects for low-level peripheral/hardware-related modules
 
+''' To-Do:
+ - add iterable support channels passed to GPIO
+ - add GPIO pull-up/pull-down support
+ - add event detection support
+'''
+
+
 __author__ = 'Trevor Allen'
 
 # Standard Library
@@ -160,10 +167,10 @@ class MockGPIO(object):
     RPI_INFO = {'MANUFACTURER': 'Unknown', 'P1_REVISION': 3, 'PROCESSOR': 'Unknown',
                 'RAM': 'Unknown', 'REVISION': '0010', 'TYPE': 'Unknown'}
 
-    pin_func = { k:None for k in bcm_board_map.keys() }
+    gpio_setting = { k:1 for k in bcm_board_map.keys() }
 
     def __init__(self):
-        self.mode = None
+        self.mode = -1
         self.setmode_run = False
         self.setup_run = False
         pass
@@ -182,30 +189,46 @@ class MockGPIO(object):
 
     def getmode(self):
         # Should return BCM, BOARD, or UNKNOWN
-        if not self.setmode_run:
-            raise RuntimeError('GPIO.setmode() not run')
         return self.mode
 
-    def setup(self, channel, direction, pull_up_down=None, initial=None):
+    def _pin_validate(self, channel):
+        ''' For test/mock purposes, to centralize validation checks of pin numbers & values '''
         if channel not in self.bcm_board_map.keys():
-            raise ValueError('The channel sent is invalid on a Raspberry Pi')
+            raise ValueError('Channel is invalid on a Raspberry Pi: %s' % str(channel))
+
+    def cleanup(self, channels=None):
+        # Resets all to INPUT with no pullup/pulldown and no event detection
+        if channels is None:
+            channels = self.bcm_board_map.keys()
+        elif not hasattr(channels, '__iter__'):
+            channels = [channels,]
+        for pin in channels:
+            self.gpio_setting[pin] = 1
+        self.mode = -1
+        self.setmode_run = False
+
+    def setup(self, channels, direction, pull_up_down=None, initial=None):
+        if not hasattr(channels, '__iter__'):
+            channels = [channels, ]
+        for channel in channels:
+            self._pin_validate(channel)
+
         if direction not in (self.IN, self.OUT):
             raise ValueError('An invalid direction was passed to setup()')
         if (pull_up_down is not None and
             pull_up_down not in (self.PUD_OFF, self.PUD_UP, self.PUD_DOWN) ):
             raise ValueError('pull_up_down not in pre-defined PUD_OFF/UP/DOWN values')
         self.setup_run = True  # really should do this on a per-channel basis
-        self.pin_func[channel] = direction
+        self.gpio_setting[channel] = direction
         # Returns nothing
         pass
 
-    def cleanup(self, channel=None):
-        # Resets all to INPUT with no pullup/pulldown and no event detection
-        pass
-
     def output(self, channel, value):
-        if channel not in self.bcm_board_map.keys():
-            raise ValueError('The channel sent is invalid on a Raspberry Pi')
+        if not hasattr(channels, '__iter__'):
+            channels = [channels, ]
+        for channel in channels:
+            self._pin_validate(channel)
+
         if value not in (self.LOW, self.HIGH):
             raise ValueError('An invalid value was passed to output()')
         if not self.setmode_run:
@@ -215,27 +238,28 @@ class MockGPIO(object):
         # Returns nothing
         pass
 
-    def input(self, channel):
-        # Note, example sensor.get_dist() results:
-        #   ('Start/stop/duration:\t', 1426271860.653022, 1426271860.653088, 6.604194641113281e-05)
-        #   corresponds to d =  'd': 1.1236706972122192
-        if channel not in self.bcm_board_map.keys():
-            raise ValueError('The channel sent is invalid on a Raspberry Pi')
+    def input(self, channels):
+        if not hasattr(channels, '__iter__'):
+            channels = [channels, ]
+        for channel in channels:
+            self._pin_validate(channel)
+
         if not self.setmode_run:
             raise RuntimeError('Please set pin numbering mode using GPIO.setmode(GPIO.BOARD) or GPIO.setmode(GPIO.BCM)')
         if not self.setup_run:
             raise RuntimeError('You must setup() the GPIO channel first')
         # Returns either 0 or 1.
-        # return random.randint(self.HIGH, self.LOW)
+        ### This may need to be customized depending on its intended use, perhaps
+        #   by using mock to specify the desired return value in tests. For me
+        #   leaving it to return 1 works fine.
         return self.HIGH
 
     def gpio_function(self, channel):
-        if channel not in self.pin_func.keys():
-            raise KeyError('Invalid channel: %s' % str(channel))
-        func = self.pin_func[channel]
-        if func is None:
-            raise RuntimeError('Channel %s not yet set.' % str(channel))
-        return func
+        self._pin_validate(channel)
+        if not self.setmode_run:
+            raise RuntimeError('Please set pin numbering mode using GPIO.setmode(GPIO.BOARD) or GPIO.setmode(GPIO.BCM)')
+        return  self.gpio_setting[channel]
+
 
     ## Following functions are placeholders that need filled it.
     def add_event_callback(self, *args):
